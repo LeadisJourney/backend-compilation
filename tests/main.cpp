@@ -1,7 +1,7 @@
-#include <cstdlib>
-#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
 
 int main() {
-    std::cout << "C++: " << "Hello, world!" << std::endl;
+    printf("C: Hello, world!\n");
     return EXIT_SUCCESS;
 }

@@ -1,14 +1,16 @@
 #!/usr/bin/env python2
 
 import enum
-import io
 import os
-import select
 import socket
+import sys
 import time
+
 from docker import Client
 
-client_version = "1.18"
+gClient         = None
+gClient_version = "1.18"
+gUsers          = []
 
 class Language(enum.Enum):
     C =     "C"
@@ -46,16 +48,16 @@ class UnixSocket:
             os.remove(self.filename)
 
 class User:
-    TIMEOUT =           600 # 10 minutes.
-    name =              None
-    client =            None
-    time =              0
-    container =         None
-    volume =            None
-    unixSocket =        None
-    containerSocket =   None
-    new_files_queue =   []
-    busy =              False
+    TIMEOUT =             600 # 10 minutes.
+    name =                None
+    client =              None
+    time =                0
+    container =           None
+    volume =              None
+    unixSocket =          None
+    containerSocket =     None
+    new_requests_queue =  []
+    busy =                False
 
     def __init__(self, name, client):
         self.name = name
@@ -66,7 +68,7 @@ class User:
         self.volume = client.inspect_container(container=self.container)["Volumes"]["/root/host"]
         self.unixSocket = UnixSocket(self.volume + "/host.sock", 1)
         self.containerSocket = None
-        self.new_files_queue = []
+        self.new_requests_queue = []
         self.busy = False
         client.start(container=self.container)
 
@@ -74,6 +76,7 @@ class User:
         if self.container:
             self.client.stop(container=self.container, timeout=10)
             self.client.remove_container(container=self.container, v=True)
+            self.container = None
 
     def update(self, rlist, wlist, xlist):
         # User activity
@@ -90,12 +93,12 @@ class User:
             self.containerSocket, _ = self.unixSocket.accept()
 
         # User requests and container responses
-        if self.containerSocket and not self.busy and len(self.new_files_queue) > 0 and self.containerSocket not in wlist:
+        if self.containerSocket and not self.busy and len(self.new_requests_queue) > 0 and self.containerSocket not in wlist:
             # Need to write to container
             return (None, self.containerSocket, None)
-        elif self.containerSocket and not self.busy and len(self.new_files_queue) > 0 and self.containerSocket in wlist:
+        elif self.containerSocket and not self.busy and len(self.new_requests_queue) > 0 and self.containerSocket in wlist:
             # Can write to container
-            data, language, request, request_id = self.new_files_queue[0]
+            data, language, request, request_id = self.new_requests_queue[0]
             if language == Language.C:
                 with open(self.volume + "/main.c", "w") as file:
                     file.write(data)
@@ -105,7 +108,7 @@ class User:
             else:
                 raise NotImplementedError("Not implemented language!")
             self.containerSocket.send(b"{} {} {}".format(language.value, request.value, request_id))
-            self.new_files_queue = self.new_files_queue[1:]
+            self.new_requests_queue = self.new_requests_queue[1:]
             self.busy = True
             return (self.containerSocket, None, None)
         elif self.containerSocket and self.busy and self.containerSocket not in rlist and self.containerSocket not in xlist: 
@@ -127,7 +130,7 @@ class User:
                         print file.read()
                     os.remove(self.volume + "/stdout")
                 self.busy = False
-                if len(self.new_files_queue) > 0:
+                if len(self.new_requests_queue) > 0:
                     return (None, self.containerSocket, None)
                 else:
                     return (None, None, None)
@@ -138,69 +141,85 @@ class User:
             # Nothing to do
             return (None, None, None)
 
-    def new_file(self, code, language, request, request_id):
+    def new_request(self, code, language, request_type, request_id):
         self.time = time.time()
-        self.new_files_queue.append((code, language, request, request_id))
+        self.new_requests_queue.append((code, language, request_type, request_id))
 
-import sys
-import uuid
+
 def main():
-    # Docker client initialization.
-    client = Client(version=client_version)
-    for line in client.build(path=os.getcwd(), tag="leadis_image", rm=True):
-        print line
-    try:
-        users = []
-        rlist, wlist, xlist = [sys.stdin], [], []
-        r, w, x = [], [], []
-        while True:
-            # Loop through all users, and update them.
-            (r, w, x) = select.select(rlist, wlist, xlist, 60);
-            rlist, wlist, xlist = [sys.stdin], [], []
-            if sys.stdin in r or sys.stdin in x:
-                # New stdin entry (temporary)
-                entry = sys.stdin.readline()
-                if entry.startswith("NEW"):
-                    users.append(User(entry[4:-1], client))
-                elif entry.startswith("EXEC"):
-                    request_id = uuid.uuid1().hex
-                    print "request No.: {}".format(request_id)
-                    for user in users:
-                        if user.name == entry[5:-1]:
-                            with open("main.cpp") as file:
-                                code = file.read()
-                                user.new_file(code, Language.CPP, Request.EXEC, request_id)
-                elif entry.startswith("SYNTAX"):
-                    request_id = uuid.uuid1().hex
-                    print "request No.: {}".format(request_id)
-                    for user in users:
-                        if user.name == entry[7:-1]:
-                            with open("main.c") as file:
-                                code = file.read()
-                                user.new_file(code, Language.C, Request.SYNTAX, request_id)
-                elif entry.startswith("EXIT"):
-                    return
-                else:
-                    print "Unkown command!"
-            for user in users:
-                # Update every user, and get these socket to listen/write to
-                res = user.update(r, w, x)
-                if not res:
-                    # Remove user (warning: user is not collect here!)
-                    users.remove(user)
-                else:
-                    new_r, new_w, new_x = res
-                    if new_r:
-                        rlist.append(new_r)
-                    if new_w:
-                        wlist.append(new_w)
-                    if new_x:
-                        xlist.append(new_x)
-    except KeyboardInterrupt:
-        return
+    global gClient
+    global gClient_version
 
-if __name__ == "__main__":
-    # Docker need root privileges.
-    if os.geteuid() != 0:
-        exit("You need to have root privileges to run this script.\nPlease try again, this time using 'sudo'.")
-    main()
+    # Docker client initialization.
+    gClient = Client(version=gClient_version)
+    for line in gClient.build(path=os.getcwd(), tag="leadis_image", rm=True):
+        print line
+def exit():
+    global gUsers
+
+    # Collect all the users
+    gUsers = []
+
+def new_user(name):
+    global gClient
+    global gUsers
+
+    gUsers.append(User(name, gClient))
+
+def new_request(user_name, code, language, request_type, request_id):
+    global gUsers
+
+    for user in gUsers:
+        if user.name == user_name:
+            user.new_request(code, language, request_type, request_id)
+
+def update(rlist, wlist, xlist):
+    global gUsers
+
+    new_rlist, new_wlist, new_xlist = [], [], []
+    for user in gUsers:
+        # Update every user, and get their socket to listen/write to
+        res = user.update(rlist, wlist, xlist)
+        if not res:
+            # Remove user (warning: user is not collect here!)
+            gUsers.remove(user)
+        else:
+            r, w, x = res
+            if r:
+                new_rlist.append(r)
+            if w:
+                new_wlist.append(w)
+            if x:
+                new_xlist.append(x)
+    return (new_rlist, new_wlist, new_xlist)
+
+def info(command):
+    global gClient
+    global gClient_version
+    global gUsers
+    def users():
+        res = ""
+        for user in gUsers:
+            res += user.name + "\n"
+        return res
+    def user(name):
+        found = False
+
+        for user in gUsers:
+            if user.name == name:
+                sys.stdout.write(user.name + ": \n" + \
+                                 "container: " + user.container + "\n" + \
+                                 "volume: " + user.volume + "\n" + \
+                                 "pending requests: " + str(len(user.new_requests_queue)) + "\n")
+                found = True
+        if not found:
+            sys.stderr.write("Unknown user!\n")
+
+    switch = {
+        "help" : lambda: sys.stdout.write("help         Print this help\n" + \
+                                          "users        Users names\n" + \
+                                          "user NAME    User Infos\n"),
+        "users": lambda: sys.stdout.write(users()),
+        "user" : lambda: user(command[1]) if len(command) == 2 else sys.stderr.write("Invalid syntax!\n")
+    }
+    switch.get(command[0], lambda: sys.stderr.write("Unknown command! Try 'help'.\n"))()
