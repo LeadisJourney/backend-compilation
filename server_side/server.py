@@ -29,7 +29,7 @@ def main():
                         docker_server.new_request(entry[5:-1], code, docker_server.Language.CPP, docker_server.Request.EXEC, request_id)
                 elif entry.startswith("SYNTAX"):
                     request_id = uuid.uuid1().hex
-                    print "request No.: {}".format(request_id)
+                    print "Request No.: {}".format(request_id)
                     with open("main.c") as file:
                         code = file.read()
                         docker_server.new_request(entry[7:-1], code, docker_server.Language.C, docker_server.Request.SYNTAX, request_id)
