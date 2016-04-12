@@ -46,9 +46,15 @@ func (d *DocMan) TimoutContainers() {
 }
 
 func (d *DocMan) OldestContainer() {
-	for key, _ := range d.cli.Cont {
-
-	}xs
+	old := ""
+	if len(d.cli.Cont) > 0 {
+		for key, _ := range d.cli.Cont {
+			if old == "" || time.Since(d.cli.Cont[old].Time) < time.Since(d.cli.Cont[key].Time) {
+				old = key
+			}
+		}
+	}
+	d.cli.DeleteContainer(old)
 }
 
 func (d *DocMan) UpdateTimeout() {
@@ -87,11 +93,12 @@ func (d *DocMan) Handler(w http.ResponseWriter, r *http.Request) {
 		Error.Println(err)
 	}
 	err = json.Unmarshal(body, &user)
+	fmt.Println("Received request from", user.UserId)
 	res.Result = d.cli.ExecuteProgram(user.UserId, user.Code, user.Language, user.Type)
 	res.Status = "OK"
 	// fmt.Println(res.Result+"\n")
 	//b, _ := json.Marshal(res)
-	fmt.Fprintf(w, "%s: %s\n", user.UserId, res.Result)
+	fmt.Fprintf(w, "%s: %s", user.UserId, res.Result)
 	Trace.Println("Result sent to", user.UserId)
 	fmt.Println("Result sent to", user.UserId)
 }

@@ -67,6 +67,11 @@ func (cli *Client) ExecuteProgram(UserID, code, lang, types string) (string) {
 	
 	// fmt.Println("\nChecking if", UserID, "Container Exists...")
 	if _, ok := cli.Cont[UserID]; !ok {
+		// TEST
+		// if len(cli.Cont) >= 1 {
+		// 	cli.OldestContainer()
+		// }
+		// END TEST
 		// fmt.Println("Adding", UserID, "Container...")
 		err := cli.AddContainer(UserID)
 		if err == false {
@@ -117,6 +122,19 @@ func (cli *Client) CompileRequest(UserID, Lang, Req string) (bool) {
 	buf.WriteString(strings.ToUpper(Lang)+" "+strings.ToUpper(Req)+" "+cli.Cont[UserID].UserID)
 	cli.Cont[UserID].UnixSock.Write(buf.Bytes())
 	return true
+}
+
+
+func (cli *Client) OldestContainer() {
+	old := ""
+	if len(cli.Cont) > 0 {
+		for key, _ := range cli.Cont {
+			if old == "" || time.Since(cli.Cont[old].Time) < time.Since(cli.Cont[key].Time) {
+				old = key
+			}
+		}
+	}
+	cli.DeleteContainer(old)
 }
 
 func (cli *Client) DeleteContainer(UserID string) (bool) {
