@@ -89,16 +89,32 @@ func (d *DocMan) Handler(w http.ResponseWriter, r *http.Request) {
 	var res Response
 	
 	body, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
 	if err != nil {
+		res.Status = "KO"
+		b, _ := json.Marshal(res)
+		fmt.Fprintf(w, "%s: %s", user.UserId, b)
 		Error.Println(err)
+		return
 	}
 	err = json.Unmarshal(body, &user)
+	if err != nil {
+		res.Status = "KO"
+		b, _ := json.Marshal(res)
+		fmt.Fprintf(w, "%s: %s", user.UserId, b)
+		Error.Println(err)
+		return
+	}
 	fmt.Println("Received request from", user.UserId)
-	res.Result = d.cli.ExecuteProgram(user.UserId, user.Code, user.Language, user.Type)
-	res.Status = "OK"
-	// fmt.Println(res.Result+"\n")
-	//b, _ := json.Marshal(res)
-	fmt.Fprintf(w, "%s: %s", user.UserId, res.Result)
+	res.Result, err = d.cli.ExecuteProgram(user.UserId, user.Code, user.Language, user.Type)
+	if err == nil {
+		res.Status = "OK"
+	} else {
+		res.Status = "KO"
+	}
+	fmt.Println(res.Result+"\n")
+	b, _ := json.Marshal(res)
+	fmt.Fprintf(w, "%s: %s", user.UserId, b)
 	Trace.Println("Result sent to", user.UserId)
 	fmt.Println("Result sent to", user.UserId)
 }

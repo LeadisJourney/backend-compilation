@@ -15,6 +15,10 @@ import (
 
 )
 
+const (
+	RTime time.Duration = 5 * time.Second
+)
+
 type Container struct {
 	ID, UserID, Volume string
 	Stream types.HijackedResponse
@@ -62,7 +66,7 @@ func NewClient(c chan int) (*Client) {
 	return &cli
 }
 
-func (cli *Client) ExecuteProgram(UserID, code, lang, types string) (string) {
+func (cli *Client) ExecuteProgram(UserID, code, lang, types string) (string, error) {
 	var res string
 	
 	// fmt.Println("\nChecking if", UserID, "Container Exists...")
@@ -74,14 +78,16 @@ func (cli *Client) ExecuteProgram(UserID, code, lang, types string) (string) {
 		// END TEST
 		// fmt.Println("Adding", UserID, "Container...")
 		err := cli.AddContainer(UserID)
-		if err == false {
-			return ""
+		if err != nil {
+			Error.Println(err)
+			return "", err
 		}
 		
 		// fmt.Println("Starting", UserID, "Container...")
 		err = cli.StartContainer(UserID)
-		if err == false {
-			return ""
+		if err != nil {
+			Error.Println(err)
+			return "", err
 		}
 	}
 
@@ -89,39 +95,49 @@ func (cli *Client) ExecuteProgram(UserID, code, lang, types string) (string) {
 
 	// fmt.Println("Copying Code to", UserID, "Container...")
 	err := cli.CopytoContainer(UserID, code, lang)
-	if err == false {
-		return ""
+	if err != nil {
+		Error.Println(err)
+		return "", err
 	}
 
 	// fmt.Println("Compiling", UserID, "Code...")
 	err = cli.CompileRequest(UserID, lang, types)
-	if err == false {
-		return ""
+	if err != nil {
+		Error.Println(err)
+		return "", err
 	}
 
 	// fmt.Println("Getting", UserID, "Response...\n")
 	res, err = cli.GetResponse(UserID)
-	if err == false {
-		return ""
+	if err != nil {
+		Error.Println(err)
+		return "", err
 	}
 	cli.c <- 1
-	return res
+	return res, nil
 }
 
 // Check error value
-func (cli *Client) GetResponse(UserID string) (string, bool) {
+func (cli *Client) GetResponse(UserID string) (string, error) {
 	tmp := make([]byte, 1)
+
+	t := time.Now()
+	t = t.Add(RTime)
+	err := cli.Cont[UserID].UnixSock.SetReadDeadline(t)
+	if err != nil {
+		return "", err
+	}	
 	cli.Cont[UserID].UnixSock.Read(tmp)
 	res, _ := ioutil.ReadFile(cli.Cont[UserID].Volume+"/stdout")
-	return string(res), true
+	return string(res), nil
 }
 
-func (cli *Client) CompileRequest(UserID, Lang, Req string) (bool) {
+func (cli *Client) CompileRequest(UserID, Lang, Req string) (error) {
 	var buf bytes.Buffer
 	
 	buf.WriteString(strings.ToUpper(Lang)+" "+strings.ToUpper(Req)+" "+cli.Cont[UserID].UserID)
 	cli.Cont[UserID].UnixSock.Write(buf.Bytes())
-	return true
+	return nil
 }
 
 
@@ -137,74 +153,65 @@ func (cli *Client) OldestContainer() {
 	cli.DeleteContainer(old)
 }
 
-func (cli *Client) DeleteContainer(UserID string) (bool) {
+func (cli *Client) DeleteContainer(UserID string) (error) {
 	err := cli.Pcli.ContainerStop(context.Background(), cli.Cont[UserID].ID, 0)
 	if err != nil {
-		Error.Println(err)
-		return false
+		return err
 	}
 	delete(cli.Cont, UserID)
-	return true	
+	return nil	
 }
 
-func (cli *Client) CopytoContainer(UserID, code, lang string) (bool) {
+func (cli *Client) CopytoContainer(UserID, code, lang string) (error) {
 	f, err := os.Create(cli.Cont[UserID].Volume+"/main."+strings.ToLower(lang))
 	if err != nil {
-		Error.Println(err)
-		return false
+		return err
 	}
 	_, err = f.Write([]byte(code))
 	if err != nil {
-		Error.Println(err)
-		return false
+		return err
 	}
-	return true
+	return nil
 }
 
-func (cli *Client) StartContainer(UserID string) (bool) {
+func (cli *Client) StartContainer(UserID string) (error) {
 	l, err := net.Listen("unix", cli.Cont[UserID].Volume+"/host.sock")
 	if err != nil {
-		Error.Println(err)
-		return false
+		return err
 	}
 	err = cli.Pcli.ContainerStart(context.Background(), cli.Cont[UserID].ID)
 	if err != nil {
-		Error.Println(err)
-		return false
+		return err
 	}
 
 	cli.Cont[UserID].UnixSock, err = l.Accept()
 	if err != nil {
-		Error.Println(err)
-		return false
-	}	
-	return true
+		return err
+	}
+	return nil
 }
 
-func (cli *Client) AddContainer(UserID string) (bool) {
+func (cli *Client) AddContainer(UserID string) (error) {
 	var vol types.ContainerJSON
 	var cont Container
 	
 	cont.UserID = UserID
 	resp, err := cli.Pcli.ContainerCreate(context.Background(), initConfig(), nil, nil, "")
 	if err != nil {
-		Error.Println(err)
-		return false
+		return err
 	}
 	cont.ID = resp.ID
 	cont.Stream, err = cli.Pcli.ContainerAttach(context.Background(), types.ContainerAttachOptions{ContainerID: cont.ID, Stream: true, Stdout: true, Stderr: true})
 	if err != nil {
-		Error.Println(err)
-		return false
+		return err
 	}
 	vol, err = cli.Pcli.ContainerInspect(context.Background(), cont.ID)
 	if err != nil {
-		Error.Println(err)
-		return false
+		return err
 	}
 
 	cont.Volume = vol.Mounts[0].Source		
 	cli.Cont[UserID] = &cont
 	
-	return true
+	return nil
 }
