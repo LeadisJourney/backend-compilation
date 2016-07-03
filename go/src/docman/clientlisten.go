@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	Timeout int = 20
+	Timeout int = 60
 	NCont int = 10
 )
 
@@ -89,6 +89,7 @@ func (d *DocMan) Handler(w http.ResponseWriter, r *http.Request) {
 	var res Response
 	
 	body, err := ioutil.ReadAll(r.Body)
+	fmt.Println("BODDY BEGIN", string(body), "BODY END")
 	defer r.Body.Close()
 	if err != nil {
 		res.Status = "KO"
@@ -107,6 +108,7 @@ func (d *DocMan) Handler(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println("Received request from", user.UserId)
 	res.Result, err = d.cli.ExecuteProgram(user.UserId, user.Code, user.Language, user.Type)
+	fmt.Println("\nUSER STRUCT BEGIN\n", user, "\nUSER STRUCT END\n\n")
 	if err == nil {
 		res.Status = "OK"
 	} else {
@@ -125,9 +127,13 @@ func Listener() {
 	c := make(chan int)
 	d.timeout = Timeout
 	d.cli = NewClient(c)
+	if d.cli == nil {
+		return
+	}
+	go d.cli.ReadStats()
 	http.HandleFunc("/v0.1/ce/status", d.Handler)
 	go d.CheckTime(c)
-	err := http.ListenAndServe(":2222", nil)
+	err := http.ListenAndServe(":8443", nil)
 	if err != nil {
 		Error.Println(err)
 		return

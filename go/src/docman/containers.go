@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	RTime time.Duration = 5 * time.Second
+	RTime time.Duration = 60 * time.Second
 )
 
 type Container struct {
@@ -24,7 +24,10 @@ type Container struct {
 	Stream types.HijackedResponse
 	UnixSock net.Conn
 	Time time.Time
+	PCPU uint64
+	PSys uint64
 }
+
 
 type Client struct {
 	Pcli *client.Client
@@ -95,6 +98,7 @@ func (cli *Client) ExecuteProgram(UserID, code, lang, types string) (string, err
 
 	// fmt.Println("Copying Code to", UserID, "Container...")
 	err := cli.CopytoContainer(UserID, code, lang)
+	fmt.Println("\nCODE BEGIN\n", code, "\nCODE END\n\n")
 	if err != nil {
 		Error.Println(err)
 		return "", err
@@ -114,12 +118,18 @@ func (cli *Client) ExecuteProgram(UserID, code, lang, types string) (string, err
 		return "", err
 	}
 	cli.c <- 1
+
+	
+	// BEGIN STATS TEST
+	//cli.ReadStats(UserID)
+	// END STATS TEST
+
 	return res, nil
 }
 
 // Check error value
 func (cli *Client) GetResponse(UserID string) (string, error) {
-	tmp := make([]byte, 1)
+	tmp := make([]byte, 4)
 
 	t := time.Now()
 	t = t.Add(RTime)
@@ -128,6 +138,11 @@ func (cli *Client) GetResponse(UserID string) (string, error) {
 		return "", err
 	}	
 	cli.Cont[UserID].UnixSock.Read(tmp)
+	
+	// TEST
+	fmt.Println(tmp)
+	// END TEST
+	
 	res, _ := ioutil.ReadFile(cli.Cont[UserID].Volume+"/stdout")
 	return string(res), nil
 }
@@ -137,6 +152,7 @@ func (cli *Client) CompileRequest(UserID, Lang, Req string) (error) {
 	
 	buf.WriteString(strings.ToUpper(Lang)+" "+strings.ToUpper(Req)+" "+cli.Cont[UserID].UserID)
 	cli.Cont[UserID].UnixSock.Write(buf.Bytes())
+
 	return nil
 }
 
@@ -196,6 +212,8 @@ func (cli *Client) AddContainer(UserID string) (error) {
 	var cont Container
 	
 	cont.UserID = UserID
+	cont.PCPU = 0
+	cont.PSys = 0
 	resp, err := cli.Pcli.ContainerCreate(context.Background(), initConfig(), nil, nil, "")
 	if err != nil {
 		return err
@@ -210,8 +228,8 @@ func (cli *Client) AddContainer(UserID string) (error) {
 		return err
 	}
 
-	cont.Volume = vol.Mounts[0].Source		
-	cli.Cont[UserID] = &cont
-	
+	cont.Volume = vol.Mounts[0].Source
+	fmt.Println(cont.Volume)
+	cli.Cont[UserID] = &cont	
 	return nil
 }
