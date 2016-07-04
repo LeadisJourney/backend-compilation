@@ -22,6 +22,7 @@ while True:
 
     if request[1] == Request.EXEC.value:
         # Execution
+        # subprocess.call(["make", "realclean", "-C", "/root/host/exercise"], stdout=stdout, stderr=stderr)
         if request[0] == Language.C.value:
             with open("/root/host/stdout", "w") as stderr:
                 with open("/root/host/stdout", "w") as stdout:

@@ -25,13 +25,13 @@
 		var name = row.insertCell(0);
 		
 		name.innerHTML = cont.Name;
-		cpu.innerHTML = cont.Cpu;
-		mem.innerHTML = cont.Mem;
+		cpu.innerHTML = cont.Cpu.toFixed(2);
+		mem.innerHTML = cont.Mem.toFixed(2);
       
 		row.id = cont.Name;
 	} else {
-		x.cells[1].innerHTML = cont.Cpu;
-		x.cells[2].innerHTML = cont.Mem;
+		x.cells[1].innerHTML = cont.Cpu.toFixed(2);
+		x.cells[2].innerHTML = cont.Mem.toFixed(2);
 	}
       });
       
