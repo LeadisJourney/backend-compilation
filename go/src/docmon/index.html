@@ -1,0 +1,55 @@
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="bootstrap-3.3.6-dist/css/bootstrap.min.css">
+  </head>
+  <body>
+    <script type="text/javascript">
+      function GetInfo(cont) {
+      console.log(cont);
+      }
+      
+      var ws = new WebSocket("ws://163.5.84.111:2222/test");
+      ws.onmessage = function (event) {
+      console.log(event.data);
+
+      info = JSON.parse(event.data)
+      info.forEach(function(cont) {
+      
+	var x = document.getElementById(cont.Name);
+	if (x === null) {
+		var table = document.getElementById("containers");
+		var row = table.insertRow(1);
+
+		var mem = row.insertCell(0);
+		var cpu = row.insertCell(0);
+		var name = row.insertCell(0);
+		
+		name.innerHTML = cont.Name;
+		cpu.innerHTML = cont.Cpu;
+		mem.innerHTML = cont.Mem;
+      
+		row.id = cont.Name;
+	} else {
+		x.cells[1].innerHTML = cont.Cpu;
+		x.cells[2].innerHTML = cont.Mem;
+	}
+      });
+      
+      }
+      
+      
+    </script>
+    <h1>Leadis Container Info</h1>
+
+    <table id="containers" style="width:100%" class="table table-striped">
+      <tr>
+	<td><b>Name</b></td>
+	<td><b>CPU</b></td>
+	<td><b>Memory</b></td>
+      </tr>
+    </table>
+    
+    <script src="bootstrap-3.3.6-dist/js/jquery.min.js"></script>
+    <script src="bootstrap-3.3.6-dist/js/bootstrap.min.js"></script>
+  </body>
+  </html>

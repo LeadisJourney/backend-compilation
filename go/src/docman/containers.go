@@ -12,7 +12,6 @@ import (
 	
 	"github.com/docker/engine-api/types"
 	"github.com/docker/engine-api/client"
-
 )
 
 const (
@@ -69,7 +68,7 @@ func NewClient(c chan int) (*Client) {
 	return &cli
 }
 
-func (cli *Client) ExecuteProgram(UserID, code, lang, types string) (string, error) {
+func (cli *Client) ExecuteProgram(UserID, code, lang, types, ex string) (string, error) {
 	var res string
 	
 	// fmt.Println("\nChecking if", UserID, "Container Exists...")
@@ -97,7 +96,7 @@ func (cli *Client) ExecuteProgram(UserID, code, lang, types string) (string, err
 	cli.Cont[UserID].Time = time.Now()
 
 	// fmt.Println("Copying Code to", UserID, "Container...")
-	err := cli.CopytoContainer(UserID, code, lang)
+	err := cli.CopytoContainer(UserID, code, lang, ex)
 	fmt.Println("\nCODE BEGIN\n", code, "\nCODE END\n\n")
 	if err != nil {
 		Error.Println(err)
@@ -178,8 +177,10 @@ func (cli *Client) DeleteContainer(UserID string) (error) {
 	return nil	
 }
 
-func (cli *Client) CopytoContainer(UserID, code, lang string) (error) {
-	f, err := os.Create(cli.Cont[UserID].Volume+"/main."+strings.ToLower(lang))
+func (cli *Client) CopytoContainer(UserID, code, lang, ex string) (error) {
+	fmt.Println("Exersice name", ex)
+	CopyDir(ex, cli.Cont[UserID].Volume+"/exercise")
+	f, err := os.Create(cli.Cont[UserID].Volume+"/exercise/src/"+ex+"."+strings.ToLower(lang))
 	if err != nil {
 		return err
 	}

@@ -25,6 +25,7 @@ type UserInfo struct {
 	Code string
 	Language string
 	Type string
+	Exercise string
 }
 
 type DocMan struct {
@@ -89,6 +90,12 @@ func (d *DocMan) Handler(w http.ResponseWriter, r *http.Request) {
 	var res Response
 	
 	body, err := ioutil.ReadAll(r.Body)
+
+	// TMP
+	res.Errors = append(res.Errors, "")
+	res.Warnings = append(res.Warnings, "")
+	// END TMP
+	
 	fmt.Println("BODDY BEGIN", string(body), "BODY END")
 	defer r.Body.Close()
 	if err != nil {
@@ -107,7 +114,7 @@ func (d *DocMan) Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Println("Received request from", user.UserId)
-	res.Result, err = d.cli.ExecuteProgram(user.UserId, user.Code, user.Language, user.Type)
+	res.Result, err = d.cli.ExecuteProgram(user.UserId, user.Code, user.Language, user.Type, user.Exercise)
 	fmt.Println("\nUSER STRUCT BEGIN\n", user, "\nUSER STRUCT END\n\n")
 	if err == nil {
 		res.Status = "OK"
@@ -116,9 +123,11 @@ func (d *DocMan) Handler(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println(res.Result+"\n")
 	b, _ := json.Marshal(res)
-	fmt.Fprintf(w, "%s: %s", user.UserId, b)
+	fmt.Fprintf(w, "%s", b)
 	Trace.Println("Result sent to", user.UserId)
 	fmt.Println("Result sent to", user.UserId)
+	fmt.Println(string(b))
+	fmt.Println("END RESULT SENT")
 }
 
 func Listener() {
@@ -130,7 +139,7 @@ func Listener() {
 	if d.cli == nil {
 		return
 	}
-	go d.cli.ReadStats()
+	//go d.cli.ReadStats()
 	http.HandleFunc("/v0.1/ce/status", d.Handler)
 	go d.CheckTime(c)
 	err := http.ListenAndServe(":8443", nil)
