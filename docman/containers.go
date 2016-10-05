@@ -220,9 +220,11 @@ func (cli *Client) AddContainer(UserID string) (error) {
 	var cont Container
 	
 	cont.UserID = UserID
+	// REMOVE
 	cont.PCPU = 0
 	cont.PSys = 0
-	resp, err := cli.Pcli.ContainerCreate(context.Background(), initConfig(), nil, nil, "")
+	// END REMOVE
+	resp, err := cli.Pcli.ContainerCreate(context.Background(), initConfig(), nil, nil, "leadis journey")
 	if err != nil {
 		return err
 	}

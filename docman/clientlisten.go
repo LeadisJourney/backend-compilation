@@ -92,8 +92,8 @@ func (d *DocMan) Handler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 
 	// TMP
-	res.Errors = append(res.Errors, "")
-	res.Warnings = append(res.Warnings, "")
+	res.Errors = append(res.Errors, "Error")
+	res.Warnings = append(res.Warnings, "Warning")
 	// END TMP
 	
 	// fmt.Println("BODDY BEGIN", string(body), "BODY END")
