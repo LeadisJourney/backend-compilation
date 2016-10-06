@@ -119,7 +119,7 @@ func (d *DocMan) Handler(w http.ResponseWriter, r *http.Request) {
 		res.Status = "OK"
 	} else {
 		res.Status = "KO"
-		res.Errors = append(res.Errors, fmt.Sprint(err)
+		res.Errors = append(res.Errors, fmt.Sprint(err))
 	}
 	Info.Println("Result: ", res)
 	b, _ := json.Marshal(res)

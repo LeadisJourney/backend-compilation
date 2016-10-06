@@ -40,7 +40,7 @@ func Init(
 		log.Ldate|log.Ltime|log.Lshortfile)
 }
 
-func initConfig() (config *container.Config) {
+func initConfig() (config *docker.Config) {
 	mount := map[string]struct{}{"/root/host": {}}
 	return &docker.Config{Image: "leadis_image", Volumes: mount, Cmd: []string{"/root/server.py"}, AttachStdout: true}
 	//return &container.Config{Image: "leadis_image", Volumes: mount, Cmd: strslice.StrSlice{"touch /root/host/test"}, AttachStdout: true}

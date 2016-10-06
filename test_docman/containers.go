@@ -20,7 +20,6 @@ const (
 
 type Container struct {
 	ID, UserID, Volume string
-	Stream types.HijackedResponse
 	UnixSock net.Conn
 	Time time.Time
 	PCPU uint64
@@ -41,19 +40,19 @@ func NewClient(c chan int) (*Client) {
 	cli.c = c
 	cli.Cont = make(map[string]*Container)
 
-	cli.Pcli, err = client.NewClientFromEnv()
+	cli.Pcli, err = docker.NewClientFromEnv()
 	if err != nil {
 		Error.Println(err)
 		return nil
 	}
 
 	cwd, _ := os.Getwd()
-	ctx, err := os.Open(cwd+"/Dockerfile.tar.gz")
-	if err != nil {
-		Error.Println(err)
-		return nil
-	}
-	err = cli.Pcli.ImageBuild(docker.BuildImageOptions{Dockerfie: cwd+"/Dockerfile.tar.gz", Name: "leadis_image", Context: ctx, SuppressOutput: false, Context: context.Background(),})
+	// ctx, err := os.Open(cwd+"/Dockerfile.tar.gz")
+	// if err != nil {
+	// 	Error.Println(err)
+	// 	return nil
+	// }
+	err = cli.Pcli.BuildImage(docker.BuildImageOptions{Dockerfile: cwd+"/Dockerfile.tar.gz", Name: "leadis_image", SuppressOutput: false, Context: context.Background(),})
 	if err != nil {
 		Error.Println(err)
 		return nil
@@ -157,8 +156,7 @@ func (cli *Client) OldestContainer() {
 }
 
 func (cli *Client) DeleteContainer(UserID string) (error) {
-	timeout := time.Second * 0
-	err := cli.Pcli.StopContainer(cli.Cont[UserID].ID, &timeout)
+	err := cli.Pcli.StopContainer(cli.Cont[UserID].ID, 0)
 	if err != nil {
 		Error.Println(err)
 		return errors.New("Internal Error!")
@@ -189,7 +187,7 @@ func (cli *Client) StartContainer(UserID string) (error) {
 		Error.Println(err)
 		return errors.New("Internal Error!")
 	}
-	err = cli.Pcli.StartContainer(cli.Cont[UserID].ID, nil{})
+	err = cli.Pcli.StartContainer(cli.Cont[UserID].ID, nil)
 	if err != nil {
 		Error.Println(err)
 		return errors.New("Internal Error!")
@@ -204,7 +202,6 @@ func (cli *Client) StartContainer(UserID string) (error) {
 }
 
 func (cli *Client) AddContainer(UserID string) (error) {
-	var vol types.ContainerJSON
 	var cont Container
 	
 	cont.UserID = UserID
@@ -212,23 +209,24 @@ func (cli *Client) AddContainer(UserID string) (error) {
 	cont.PCPU = 0
 	cont.PSys = 0
 	// END REMOVE
-	resp, err := cli.Pcli.ContainerCreate(docker.CreateContainerOptions{"leadis journey", initConfig(), nil, nil, context.Background()})
+	resp, err := cli.Pcli.CreateContainer(docker.CreateContainerOptions{"leadis journey", initConfig(), nil, nil, context.Background()})
 	if err != nil {
 		Error.Println(err)
 		return errors.New("Internal Error!")
 	}
 	cont.ID = resp.ID
-	cont.Stream, err = cli.Pcli.AttachToContainer(docker.AttachToContainerOptions{Container: cont.ID, Stream: true, Stdout: true, Stderr: true})
+	err = cli.Pcli.AttachToContainer(docker.AttachToContainerOptions{Container: cont.ID, Stream: true, Stdout: true, Stderr: true})
 	if err != nil {
 		Error.Println(err)
 		return errors.New("Internal Error!")
 	}
-	vol, err = cli.Pcli.InspectContainer(cont.ID)
+	vol, err := cli.Pcli.InspectContainer(cont.ID)
 	if err != nil {
 		Error.Println(err)
 		return errors.New("Internal Error!")
 	}
 
+	//cont.Volume = vol.Mounts[0].Source
 	cont.Volume = vol.Mounts[0].Source
 	fmt.Println(cont.Volume)
 	cli.Cont[UserID] = &cont
