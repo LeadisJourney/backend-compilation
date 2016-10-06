@@ -6,6 +6,7 @@ import (
 	"net"
 	"time"
 	"bytes"
+	"errors"
 	"strings"
 	"io/ioutil"
 	"golang.org/x/net/context"
@@ -68,59 +69,48 @@ func NewClient(c chan int) (*Client) {
 	return &cli
 }
 
+// Creates and prepares Docker conatiner then compile and execute in container
 func (cli *Client) ExecuteProgram(UserID, code, lang, types, ex string) (string, error) {
 	var res string
 	
-	// fmt.Println("\nChecking if", UserID, "Container Exists...")
 	if _, ok := cli.Cont[UserID]; !ok {
 		// TEST
 		// if len(cli.Cont) >= 1 {
 		// 	cli.OldestContainer()
 		// }
 		// END TEST
-		// fmt.Println("Adding", UserID, "Container...")
 		err := cli.AddContainer(UserID)
 		if err != nil {
-			Error.Println(err)
 			return "", err
 		}
 		
-		// fmt.Println("Starting", UserID, "Container...")
 		err = cli.StartContainer(UserID)
 		if err != nil {
-			Error.Println(err)
 			return "", err
 		}
 	}
 
 	cli.Cont[UserID].Time = time.Now()
 
-	// fmt.Println("Copying Code to", UserID, "Container...")
 	err := cli.CopytoContainer(UserID, code, lang, ex)
-	// fmt.Println("\nCODE BEGIN\n", code, "\nCODE END\n\n")
 	if err != nil {
-		Error.Println(err)
 		return "", err
 	}
 
-	// fmt.Println("Compiling", UserID, "Code...")
 	err = cli.CompileRequest(UserID, lang, types)
 	if err != nil {
-		Error.Println(err)
 		return "", err
 	}
 
-	// fmt.Println("Getting", UserID, "Response...\n")
 	res, err = cli.GetResponse(UserID)
 	if err != nil {
-		Error.Println(err)
 		return "", err
 	}
 	cli.c <- 1
 
 	
 	// BEGIN STATS TEST
-	//cli.ReadStats(UserID)
+	// cli.ReadStats(UserID)
 	// END STATS TEST
 	return res, nil
 }
@@ -133,7 +123,8 @@ func (cli *Client) GetResponse(UserID string) (string, error) {
 	t = t.Add(RTime)
 	err := cli.Cont[UserID].UnixSock.SetReadDeadline(t)
 	if err != nil {
-		return "", err
+		Error.Println(err)
+		return "", errors.New("Internal Error!")
 	}	
 	cli.Cont[UserID].UnixSock.Read(tmp)
 	
@@ -153,9 +144,9 @@ func (cli *Client) CompileRequest(UserID, Lang, Req string) (error) {
 	buf.WriteString(strings.ToUpper(Lang)+" "+strings.ToUpper(Req)+" "+cli.Cont[UserID].UserID)
 	_, err := cli.Cont[UserID].UnixSock.Write(buf.Bytes())
 	if err != nil {
-		return err
+		Error.Println(err)
+		return errors.New("Internal Error!")
 	}
-
 	return nil
 }
 
@@ -176,24 +167,25 @@ func (cli *Client) DeleteContainer(UserID string) (error) {
 	timeout := time.Second * 0
 	err := cli.Pcli.ContainerStop(context.Background(), cli.Cont[UserID].ID, &timeout)
 	if err != nil {
-		return err
+		Error.Println(err)
+		return errors.New("Internal Error!")
 	}
 	delete(cli.Cont, UserID)
 	return nil	
 }
 
 func (cli *Client) CopytoContainer(UserID, code, lang, ex string) (error) {
-	//fmt.Println("Exersice name", ex)
-	
 	os.Remove(cli.Cont[UserID].Volume+"/exercise")
 	CopyDir(ex, cli.Cont[UserID].Volume+"/exercise")
 	f, err := os.Create(cli.Cont[UserID].Volume+"/exercise/src/"+ex+"."+strings.ToLower(lang))
 	if err != nil {
-		return err
+		Error.Println(err)
+		return errors.New("Internal Error!")
 	}
 	_, err = f.Write([]byte(code))
 	if err != nil {
-		return err
+		Error.Println(err)
+		return errors.New("Internal Error!")
 	}
 	return nil
 }
@@ -201,16 +193,19 @@ func (cli *Client) CopytoContainer(UserID, code, lang, ex string) (error) {
 func (cli *Client) StartContainer(UserID string) (error) {
 	l, err := net.Listen("unix", cli.Cont[UserID].Volume+"/host.sock")
 	if err != nil {
-		return err
+		Error.Println(err)
+		return errors.New("Internal Error!")
 	}
 	err = cli.Pcli.ContainerStart(context.Background(), cli.Cont[UserID].ID, types.ContainerStartOptions{})
 	if err != nil {
-		return err
+		Error.Println(err)
+		return errors.New("Internal Error!")
 	}
 
 	cli.Cont[UserID].UnixSock, err = l.Accept()
 	if err != nil {
-		return err
+		Error.Println(err)
+		return errors.New("Internal Error!")
 	}
 	return nil
 }
@@ -226,16 +221,19 @@ func (cli *Client) AddContainer(UserID string) (error) {
 	// END REMOVE
 	resp, err := cli.Pcli.ContainerCreate(context.Background(), initConfig(), nil, nil, "leadis journey")
 	if err != nil {
-		return err
+		Error.Println(err)
+		return errors.New("Internal Error!")
 	}
 	cont.ID = resp.ID
 	cont.Stream, err = cli.Pcli.ContainerAttach(context.Background(), cont.ID, types.ContainerAttachOptions{Stream: true, Stdout: true, Stderr: true})
 	if err != nil {
-		return err
+		Error.Println(err)
+		return errors.New("Internal Error!")
 	}
 	vol, err = cli.Pcli.ContainerInspect(context.Background(), cont.ID)
 	if err != nil {
-		return err
+		Error.Println(err)
+		return errors.New("Internal Error!")
 	}
 
 	cont.Volume = vol.Mounts[0].Source

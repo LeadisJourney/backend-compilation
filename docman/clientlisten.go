@@ -85,6 +85,7 @@ func (d *DocMan) CheckTime(c chan int) {
 	}
 }
 
+// Parse request sent by API
 func (d *DocMan) Handler(w http.ResponseWriter, r *http.Request) {
 	var user UserInfo
 	var res Response
@@ -96,7 +97,6 @@ func (d *DocMan) Handler(w http.ResponseWriter, r *http.Request) {
 	res.Warnings = append(res.Warnings, "Warning")
 	// END TMP
 	
-	// fmt.Println("BODDY BEGIN", string(body), "BODY END")
 	defer r.Body.Close()
 	if err != nil {
 		res.Status = "KO"
@@ -115,17 +115,16 @@ func (d *DocMan) Handler(w http.ResponseWriter, r *http.Request) {
 	}
 	Info.Println("Received request from", user.UserId)
 	res.Result, err = d.cli.ExecuteProgram(user.UserId, user.Code, user.Language, user.Type, user.Exercise)
-	// fmt.Println("\nUSER STRUCT BEGIN\n", user, "\nUSER STRUCT END\n\n")
 	if err == nil {
 		res.Status = "OK"
 	} else {
 		res.Status = "KO"
+		res.Errors = append(res.Errors, fmt.Sprint(err)
 	}
 	Info.Println("Result: ", res)
 	b, _ := json.Marshal(res)
 	fmt.Fprintf(w, "%s", b)
 	Info.Println("Result sent to", user.UserId)
-	// fmt.Println(string(b))
 }
 
 func Listener() {
