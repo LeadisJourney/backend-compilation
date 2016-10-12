@@ -111,7 +111,7 @@ func (cli *Client) ExecuteProgram(UserID, code, lang, types, ex string) (string,
 
 // Check error value
 func (cli *Client) GetResponse(UserID string) (string, error) {
-	tmp := make([]byte, 4)
+	tmp := make([]byte, 512)
 
 	t := time.Now()
 	t = t.Add(RTime)
@@ -125,8 +125,12 @@ func (cli *Client) GetResponse(UserID string) (string, error) {
 	// TEST
 	// fmt.Println(tmp)
 	// END TEST
-	
-	res, _ := ioutil.ReadFile(cli.Cont[UserID].Volume+"/stdout")
+
+	res, err := ioutil.ReadFile(cli.Cont[UserID].Volume+"/stdout")
+	if err != nil {
+		Error.Println(err)
+		return "", errors.New("Internal Error!")
+	}
 	return string(res), nil
 }
 
@@ -199,6 +203,11 @@ func (cli *Client) StartContainer(UserID string) (error) {
 	Info.Println("Started container")
 
 	cli.Cont[UserID].UnixSock, err = l.Accept()
+
+	// TEST
+	cli.Cont[UserID].UnixSock.Write([]byte("Hello, World!\n"))
+	// END TEST
+	
 	if err != nil {
 		Error.Println(err)
 		return errors.New("Internal Error!")
