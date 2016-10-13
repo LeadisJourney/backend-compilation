@@ -17,6 +17,13 @@ func main() {
 		log.Ldate|log.Ltime|log.Lshortfile)
 	defer errf.Close()
 
+	// logf, _ := os.Create("/root/host/log")
+	// logl := log.New(logf,
+        //         "LOG: ",
+	// 	log.Ldate|log.Ltime|log.Lshortfile)
+	// defer logf.Close()
+
+
 	stdout, err := os.Create("/root/host/stdout")
 	if err != nil {
 		errl.Println(err)
@@ -41,6 +48,8 @@ func main() {
 			return
 		}
 		req := strings.Split(string(breq), " ")
+		stdout.Truncate(0)
+		stderr.Truncate(0)
 		if req[1] == "EXECUTION" {
 			if req[0] == "C" {
 				cmd := exec.Command("make", "-C", "/root/host/exercise")
@@ -130,6 +139,8 @@ func main() {
 				return
 			}			
 		}
+		stdout.Sync()
+		stderr.Sync()
 		conn.Write([]byte("1"))
 	}
 }
