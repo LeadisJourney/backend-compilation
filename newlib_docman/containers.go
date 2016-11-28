@@ -47,12 +47,6 @@ func NewClient(c chan int) (*Client) {
 	}
 
 	cwd, _ := os.Getwd()
-
-	// f, err := os.Open(cwd+"/output")
-	// if err != nil {
-	// 	Error.Println(err)
-	// 	return nil
-	// }
 	
 	err = cli.Pcli.BuildImage(docker.BuildImageOptions{Name: "leadis_image", SuppressOutput: false, Context: context.Background(), OutputStream: os.Stdout, ContextDir: cwd,})
 	if err != nil {
@@ -101,11 +95,6 @@ func (cli *Client) ExecuteProgram(UserID, code, lang, types, ex string) (string,
 		return "", err
 	}
 	cli.c <- 1
-
-	
-	// BEGIN STATS TEST
-	// cli.ReadStats(UserID)
-	// END STATS TEST
 	return res, nil
 }
 
@@ -163,9 +152,11 @@ func (cli *Client) OldestContainer() {
 func (cli *Client) DeleteContainer(UserID string) (error) {
 	err := cli.Pcli.StopContainer(cli.Cont[UserID].ID, 0)
 	if err != nil {
+		delete(cli.Cont, UserID)
 		Error.Println(err)
 		return errors.New("Internal Error!")
 	}
+	cli.Pcli.RemoveContainer(docker.RemoveContainerOptions{ID: UserID, RemoveVolumes: true, Force: true, Context: context.Background()})
 	delete(cli.Cont, UserID)
 	return nil	
 }
@@ -215,10 +206,6 @@ func (cli *Client) AddContainer(UserID string) (error) {
 	var cont Container
 	
 	cont.UserID = UserID
-	// REMOVE
-	cont.PCPU = 0
-	cont.PSys = 0
-	// END REMOVE
 	resp, err := cli.Pcli.CreateContainer(docker.CreateContainerOptions{"", initConfig(), nil, nil, context.Background()})
 	if err != nil {
 		Error.Println(err)
@@ -236,7 +223,6 @@ func (cli *Client) AddContainer(UserID string) (error) {
 		return errors.New("Internal Error!")
 	}
 
-	//cont.Volume = vol.Mounts[0].Source
 	cont.Volume = vol.Mounts[0].Source
 	fmt.Println(cont.Volume)
 	cli.Cont[UserID] = &cont

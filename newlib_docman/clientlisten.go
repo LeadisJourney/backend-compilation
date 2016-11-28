@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	Timeout int = 9999
+	Timeout int = 500
 	NCont int = 10
 )
 
@@ -119,6 +119,7 @@ func (d *DocMan) Handler(w http.ResponseWriter, r *http.Request) {
 		res.Status = "OK"
 	} else {
 		res.Status = "KO"
+		d.cli.DeleteContainer(user.UserId)
 		res.Errors = append(res.Errors, fmt.Sprint(err))
 	}
 	Info.Println("Result: ", res)

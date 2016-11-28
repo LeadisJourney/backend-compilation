@@ -43,7 +43,6 @@ func Init(
 func initConfig() (config *docker.Config) {
 	mount := map[string]struct{}{"/root/host": {}}
 	return &docker.Config{Image: "leadis_image", Volumes: mount, Cmd: []string{"/root/server"}, AttachStdout: true}
-	//return &container.Config{Image: "leadis_image", Volumes: mount, Cmd: strslice.StrSlice{"touch /root/host/test"}, AttachStdout: true}
 }
 
 func findContainer(UserID string, conts []Container) (int) {

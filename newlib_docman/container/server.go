@@ -8,6 +8,7 @@ import (
 	"os/exec"
 )
 
+// Not clean
 func main() {
 	breq := make([]byte, 512)
 	
@@ -16,13 +17,6 @@ func main() {
                 "ERROR: ",
 		log.Ldate|log.Ltime|log.Lshortfile)
 	defer errf.Close()
-
-	// logf, _ := os.Create("/root/host/log")
-	// logl := log.New(logf,
-        //         "LOG: ",
-	// 	log.Ldate|log.Ltime|log.Lshortfile)
-	// defer logf.Close()
-
 
 	stdout, err := os.Create("/root/host/stdout")
 	if err != nil {
