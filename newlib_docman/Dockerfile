@@ -7,6 +7,5 @@ LABEL   Version="0.1"
 VOLUME  /root/host/
 RUN     apt-get update && yes | apt-get upgrade
 RUN     yes | apt-get install gcc g++ python3 make golang
-## COPY    container.py /root/server.py
 COPY    container/server.go /root/server.go
 RUN	go build -o server /root/server.go && mv server /root/server

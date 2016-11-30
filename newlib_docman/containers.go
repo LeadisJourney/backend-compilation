@@ -44,8 +44,8 @@ func NewClient(c chan int) (*Client) {
 	if err != nil {
 		Error.Println(err)
 		return nil
-	}
-
+	
+}
 	cwd, _ := os.Getwd()
 	
 	err = cli.Pcli.BuildImage(docker.BuildImageOptions{Name: "leadis_image", SuppressOutput: false, Context: context.Background(), OutputStream: os.Stdout, ContextDir: cwd,})
@@ -60,6 +60,8 @@ func NewClient(c chan int) (*Client) {
 // Creates and prepares Docker conatiner then compile and execute in container
 func (cli *Client) ExecuteProgram(UserID, code, lang, types, ex string) (string, error) {
 	var res string
+
+	fmt.Println(UserID, code, lang, types, ex);
 	
 	if _, ok := cli.Cont[UserID]; !ok {
 		// TEST
@@ -80,6 +82,7 @@ func (cli *Client) ExecuteProgram(UserID, code, lang, types, ex string) (string,
 
 	cli.Cont[UserID].Time = time.Now()
 
+	fmt.Println(ex)
 	err := cli.CopytoContainer(UserID, code, lang, ex)
 	if err != nil {
 		return "", err

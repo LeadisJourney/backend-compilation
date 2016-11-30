@@ -46,7 +46,14 @@ func main() {
 		stderr.Truncate(0)
 		if req[1] == "EXECUTION" {
 			if req[0] == "C" {
-				cmd := exec.Command("make", "-C", "/root/host/exercise")
+				cmd := exec.Command("make", "realclean",  "-C", "/root/host/exercise")
+				err = cmd.Start()
+				if err != nil {
+					errl.Println(err)
+					return
+				}
+				cmd.Wait()
+				cmd = exec.Command("make", "-C", "/root/host/exercise")
 				cmd.Stdout = stdout
 				cmd.Stderr = stderr
 				err = cmd.Start()
@@ -56,7 +63,14 @@ func main() {
 				}
 				cmd.Wait()
 			} else if req[0] == "CPP" {
-				cmd := exec.Command("make", "-C", "/root/host/exercise")
+				cmd := exec.Command("make", "realclean",  "-C", "/root/host/exercise")
+				err = cmd.Start()
+				if err != nil {
+					errl.Println(err)
+					return
+				}
+				cmd.Wait()
+				cmd = exec.Command("make", "-C", "/root/host/exercise")
 				cmd.Stdout = stdout
 				cmd.Stderr = stderr
 				err = cmd.Start()
@@ -90,7 +104,14 @@ func main() {
 			}
 		} else if req[1] == "COMPILATION" {
 			if req[0] == "C" {
-				cmd := exec.Command("make", "-C", "/root/host/exercise")
+				cmd := exec.Command("make", "realclean",  "-C", "/root/host/exercise")
+				err = cmd.Start()
+				if err != nil {
+					errl.Println(err)
+					return
+				}
+				cmd.Wait()
+				cmd = exec.Command("make", "-C", "/root/host/exercise")
 				cmd.Stdout = stdout
 				cmd.Stderr = stderr
 				err = cmd.Start()
@@ -100,7 +121,14 @@ func main() {
 				}
 				cmd.Wait()
 			} else if req[0] == "CPP" {
-				cmd := exec.Command("make", "-C", "/root/host/exercise")
+				cmd := exec.Command("make", "realclean",  "-C", "/root/host/exercise")
+				err = cmd.Start()
+				if err != nil {
+					errl.Println(err)
+					return
+				}
+				cmd.Wait()
+				cmd = exec.Command("make", "-C", "/root/host/exercise")
 				cmd.Stdout = stdout
 				cmd.Stderr = stderr
 				err = cmd.Start()
