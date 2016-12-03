@@ -103,6 +103,7 @@ func (cli *Client) ExecuteProgram(UserID, code, lang, types, ex string) (string,
 
 // Check error value
 func (cli *Client) GetResponse(UserID string) (string, error) {
+	var res []byte
 	tmp := make([]byte, 4)
 
 	t := time.Now()
@@ -117,10 +118,20 @@ func (cli *Client) GetResponse(UserID string) (string, error) {
 		Error.Println(err)
 		return "", errors.New("Internal Error!")
 	}
-	res, err := ioutil.ReadFile(cli.Cont[UserID].Volume+"/stdout")
-	if err != nil {
-		Error.Println(err)
-		return "", errors.New("Internal Error!")
+
+	//Info.Println(strings.Compare(string(tmp), "1"))
+	if tmp[0] == '1' {
+		res, err = ioutil.ReadFile(cli.Cont[UserID].Volume+"/stdout")
+		if err != nil {
+			Error.Println(err)
+			return "", errors.New("Internal Error!")
+		}
+	} else {
+		res, err = ioutil.ReadFile(cli.Cont[UserID].Volume+"/stderr")
+		if err != nil {
+			Error.Println(err)
+			return "", errors.New("Internal Error!")
+		}
 	}
 	return string(res), nil
 }

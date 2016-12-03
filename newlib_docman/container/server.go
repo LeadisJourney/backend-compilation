@@ -50,6 +50,7 @@ func main() {
 				err = cmd.Start()
 				if err != nil {
 					errl.Println(err)
+					conn.Write([]byte("0"))
 					return
 				}
 				cmd.Wait()
@@ -59,6 +60,7 @@ func main() {
 				err = cmd.Start()
 				if err != nil {
 					errl.Println(err)
+					conn.Write([]byte("0"))
 					return
 				}
 				cmd.Wait()
@@ -67,6 +69,7 @@ func main() {
 				err = cmd.Start()
 				if err != nil {
 					errl.Println(err)
+					conn.Write([]byte("0"))
 					return
 				}
 				cmd.Wait()
@@ -76,6 +79,7 @@ func main() {
 				err = cmd.Start()
 				if err != nil {
 					errl.Println(err)
+					conn.Write([]byte("0"))
 					return
 				}
 				cmd.Wait()
@@ -87,6 +91,7 @@ func main() {
 				err = os.Chdir("/root/host/exercise")
 				if err != nil {
 					errl.Println(err)
+					conn.Write([]byte("0"))
 					return
 				}
 				cmd := exec.Command("./res")
@@ -95,11 +100,13 @@ func main() {
 				err = cmd.Start()
 				if err != nil {
 					errl.Println(err)
+					conn.Write([]byte("0"))
 					return
 				}
 				cmd.Wait()
 			} else {
 				errl.Println(err)
+				conn.Write([]byte("0"))
 				return
 			}
 		} else if req[1] == "COMPILATION" {
@@ -108,6 +115,7 @@ func main() {
 				err = cmd.Start()
 				if err != nil {
 					errl.Println(err)
+					conn.Write([]byte("0"))
 					return
 				}
 				cmd.Wait()
@@ -117,6 +125,7 @@ func main() {
 				err = cmd.Start()
 				if err != nil {
 					errl.Println(err)
+					conn.Write([]byte("0"))
 					return
 				}
 				cmd.Wait()
@@ -125,6 +134,7 @@ func main() {
 				err = cmd.Start()
 				if err != nil {
 					errl.Println(err)
+					conn.Write([]byte("0"))
 					return
 				}
 				cmd.Wait()
@@ -134,6 +144,7 @@ func main() {
 				err = cmd.Start()
 				if err != nil {
 					errl.Println(err)
+					conn.Write([]byte("0"))
 					return
 				}
 				cmd.Wait()
@@ -145,6 +156,7 @@ func main() {
 				err = os.Chdir("/root/host/exercise")
 				if err != nil {
 					errl.Println(err)
+					conn.Write([]byte("0"))
 					return
 				}
 				cmd := exec.Command("./res")
@@ -153,13 +165,15 @@ func main() {
 				err = cmd.Start()
 				if err != nil {
 					errl.Println(err)
+					conn.Write([]byte("0"))
 					return
 				}
 				cmd.Wait()
 			} else {
 				errl.Println(err)
+				conn.Write([]byte("0"))
 				return
-			}			
+			}
 		}
 		stdout.Sync()
 		stderr.Sync()
