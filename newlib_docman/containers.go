@@ -178,7 +178,11 @@ func (cli *Client) DeleteContainer(UserID string) (error) {
 func (cli *Client) CopytoContainer(UserID, code, lang, ex string) (error) {
 	Info.Println("Copying")
 	os.Remove(cli.Cont[UserID].Volume+"/exercise")
-	CopyDir(ex, cli.Cont[UserID].Volume+"/exercise")
+	err := CopyDir("/home/exploit/backend-compilation/newlib_docman/"+ex, cli.Cont[UserID].Volume+"/exercise")
+	if err != nil {
+		Error.Println(err)
+		return errors.New("Internal Error!")
+	}
 	f, err := os.Create(cli.Cont[UserID].Volume+"/exercise/src/"+ex+"."+strings.ToLower(lang))
 	if err != nil {
 		Error.Println(err)
@@ -238,7 +242,7 @@ func (cli *Client) AddContainer(UserID string) (error) {
 	}
 
 	cont.Volume = vol.Mounts[0].Source
-	fmt.Println(cont.Volume)
+	Info.Println("Volume: ", cont.Volume)
 	cli.Cont[UserID] = &cont
 	Info.Println("Created New Container, ID: ", UserID)
 	return nil

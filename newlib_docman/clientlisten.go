@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 	"bufio"
+	"strings"
 	"net/http"
 	"io/ioutil"
 	"encoding/json"
@@ -17,6 +18,7 @@ const (
 type Response struct {
 	Status, Result string
 	Errors, Warnings []string
+	Graphic string
 }
 
 type UserInfo struct {
@@ -114,7 +116,16 @@ func (d *DocMan) Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	Info.Println("Received request from", user.UserId)
-	res.Result, err = d.cli.ExecuteProgram(user.UserId, user.Code, user.Language, user.Type, user.Exercise)
+	tmp, err := d.cli.ExecuteProgram(user.UserId, user.Code, user.Language, user.Type, user.Exercise)
+	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", tmp)
+	idx := strings.LastIndex(tmp, "\"Graphic\": [")
+	idx2 := strings.LastIndex(tmp, "]")
+	if idx != -1 && idx2 != -1 {
+		res.Graphic = tmp[idx+12:idx2]
+		res.Result = tmp[:idx]
+	} else {
+		res.Result = tmp
+	}
 	if err == nil {
 		res.Status = "OK"
 	} else {

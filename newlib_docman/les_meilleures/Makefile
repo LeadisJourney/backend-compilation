@@ -4,7 +4,7 @@ MKDIR       =   mkdir -p
 
 RM          =   rm -rf
 
-CCFLAGS     =	-Wfatal-errors -Werror -Wall -Wextra -pedantic
+CCFLAGS     =	
 
 LDFLAGS     =	-L./lib/ -Wl,-rpath=./lib/
 

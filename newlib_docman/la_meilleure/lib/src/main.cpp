@@ -25,5 +25,6 @@ int                                     main(int argc __attribute__((unused)), c
         std::cout << "Bravo !" << std::endl;
     else
         std::cout << "Perdu, recommence !" << std::endl;
+    std::cout << "\"Graphic\": [" << a << ", " << b << ", " << c << ", " << res << ", " << std::max(std::max(a, b), c) << "]" << std::endl;
     return EXIT_SUCCESS;
 }

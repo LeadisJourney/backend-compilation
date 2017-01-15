@@ -53,7 +53,7 @@ int                                     main(int argc __attribute__((unused)), c
     g_cur_pos.x = lea.x;
     g_cur_pos.y = lea.y;
     g_dat = reinterpret_cast<type const (*)[10][10]>(&maz.data()) ;
-    std::cout << "{ mapX: 10, mapY: 10, leadisX: 4, leadisY: 8, leadisZ: 0, leadisMovement: [";
+    std::cout << "\"Graphic\": [{ mapX: 10, mapY: 10, leadisX: 4, leadisY: 8, leadisZ: 0, leadisMovement: [";
     la_sortie(reinterpret_cast<type const (* const)[10]>(maz.data()), &lea);
     success();
     std::cout << "], elemList: [";
@@ -63,6 +63,6 @@ int                                     main(int argc __attribute__((unused)), c
                 std::cout << (i ? ", " : "") << "{name: \"Wall\", id: " << i << ", x: " << x << ", y: " << y << ", visible: true}";
                 ++i;
             }
-    std::cout << "] }" << std::endl;
+    std::cout << "] }]" << std::endl;
     return EXIT_SUCCESS;
 }

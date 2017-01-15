@@ -4,7 +4,7 @@ MKDIR       =   mkdir -p
 
 RM          =   rm -rf
 
-CXXFLAGS    =	-Wfatal-errors -Werror -Wall -Wextra -pedantic
+CXXFLAGS    =	
 
 LDFLAGS     =	
 

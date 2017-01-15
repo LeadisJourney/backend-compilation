@@ -22,6 +22,8 @@ func Init(
 	infoHandle io.Writer,
 	warningHandle io.Writer,
 	errorHandle io.Writer) {
+	errf, _ := os.OpenFile("/home/exploit/backend-compilation/newlib_docman/errlog", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
+	logf, _ := os.OpenFile("/home/exploit/backend-compilation/newlib_docman/infolog", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
 
 	Trace = log.New(traceHandle,
 		"TRACE: ",
@@ -30,6 +32,7 @@ func Init(
 	Info = log.New(infoHandle,
 		"INFO: ",
 		log.Ldate|log.Ltime|log.Lshortfile)
+	Info.SetOutput(logf)
 
 	Warning = log.New(warningHandle,
 		"WARNING: ",
@@ -38,6 +41,7 @@ func Init(
 	Error = log.New(errorHandle,
 		"ERROR: ",
 		log.Ldate|log.Ltime|log.Lshortfile)
+	Error.SetOutput(errf)
 }
 
 func initConfig() (config *docker.Config) {
